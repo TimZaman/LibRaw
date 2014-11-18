@@ -1,17 +1,10 @@
-LibRaw-cmake
+LibRaw-TimZaman
 ============
 
-[![Build Status](https://travis-ci.org/LibRaw/LibRaw-cmake.svg?branch=master)](https://travis-ci.org/LibRaw/LibRaw-cmake)
-
-This is a separate repository for LibRaw CMake support scripts.
-It is [unmaintained](https://github.com/LibRaw/LibRaw/issues/44#issuecomment-60344793) by the authors of LibRaw and relies solely on user contributions.
-The current community-maintainer of this repository is [Maik Riechert](https://github.com/neothemachine).
-
-If you wish to contribute to it, please open an issue or submit a pull request in this repository. Do *not* submit issues or pull requests regarding CMake to the main [LibRaw repository](https://github.com/LibRaw/LibRaw). Also, try to keep CMake related discussions out of the [main forum](http://www.libraw.org/forum), instead use the issues for that.
-
-If you like to become a direct contributor with write permissions to this repository, please contact the [LibRaw authors](https://github.com/LibRaw).
+This is a separate repository for LibRaw, with the demosaic packs and CMAKE support. It also includes a script to get it going with clang-omp, so that it works on OS-X. It features some more improvements to make multithreading work on OS-X.
 
 How to use
 ----------
 
-Just copy the contents of this repository into the root LibRaw folder and run cmake as usual.
+`run ./go.sh`
+for install, cd into the _build folder and `sudo make install`
