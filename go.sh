@@ -1,42 +1,43 @@
 #/bin/sh
-
-CC=clang2
-CXX=clang2++
-#CFLAGS=" -fopenmp "
-#CXXFLAGS=" -fopenmp "
-
-
-FOLDER_CLANGOMP="/Users/tzaman/clang-omp"
-#CPPFLAGS=${CPPFLAGS}" -I/opt/local/include "
-#CPPFLAGS=${CPPFLAGS}" -I/Library/Developer/CommandLineTools/usr/lib/c++/v1 "
-#CPPFLAGS=${CPPFLAGS}" -I/usr/local/include "
-#LDFLAGS=${LDFLAGS}" -I/opt/local/lib "
-#LDFLAGS=${LDFLAGS}" -L${FOLDER_CLANGOMP}/llvm/build/Debug+Asserts/lib "
-#LDFLAGS=${LDFLAGS}" -L/usr/local/lib "
-
-CPPFLAGS=${CPPFLAGS}" -I/opt/local/include "
-#CPPFLAGS=${CPPFLAGS}" -I/Library/Developer/CommandLineTools/usr/lib/c++/v1 "
-CPPFLAGS=${CPPFLAGS}" -I/Library/Developer/CommandLineTools/usr/include/c++/v1 "
-CPPFLAGS=${CPPFLAGS}" -I/usr/local/include "
-LDFLAGS=${LDFLAGS}" -I/opt/local/lib "
-LDFLAGS=${LDFLAGS}" -L${FOLDER_CLANGOMP}/llvm/build/Debug+Asserts/lib "
-LDFLAGS=${LDFLAGS}" -L/usr/local/lib "
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	CC=clang2
+	CXX=clang2++
+	#CFLAGS=" -fopenmp "
+	#CXXFLAGS=" -fopenmp "
 
 
-#-isystem /Library/Developer/CommandLineTools/usr/lib/c++/v1
-#/Library/Developer/CommandLineTools/usr/include/c++/v1
+	FOLDER_CLANGOMP="/Users/tzaman/clang-omp"
+	#CPPFLAGS=${CPPFLAGS}" -I/opt/local/include "
+	#CPPFLAGS=${CPPFLAGS}" -I/Library/Developer/CommandLineTools/usr/lib/c++/v1 "
+	#CPPFLAGS=${CPPFLAGS}" -I/usr/local/include "
+	#LDFLAGS=${LDFLAGS}" -I/opt/local/lib "
+	#LDFLAGS=${LDFLAGS}" -L${FOLDER_CLANGOMP}/llvm/build/Debug+Asserts/lib "
+	#LDFLAGS=${LDFLAGS}" -L/usr/local/lib "
+
+	CPPFLAGS=${CPPFLAGS}" -I/opt/local/include "
+	#CPPFLAGS=${CPPFLAGS}" -I/Library/Developer/CommandLineTools/usr/lib/c++/v1 "
+	CPPFLAGS=${CPPFLAGS}" -I/Library/Developer/CommandLineTools/usr/include/c++/v1 "
+	CPPFLAGS=${CPPFLAGS}" -I/usr/local/include "
+	LDFLAGS=${LDFLAGS}" -I/opt/local/lib "
+	LDFLAGS=${LDFLAGS}" -L${FOLDER_CLANGOMP}/llvm/build/Debug+Asserts/lib "
+	LDFLAGS=${LDFLAGS}" -L/usr/local/lib "
 
 
-export CC
-export CXX
-export CPPFLAGS
-export LDFLAGS
-export CFLAGS
-export CXXFLAGS
+	#-isystem /Library/Developer/CommandLineTools/usr/lib/c++/v1
+	#/Library/Developer/CommandLineTools/usr/include/c++/v1
 
-#make clean
-#./configure --enable-demosaic-pack-gpl2 --enable-demosaic-pack-gpl3 --enable-openmp 
-#make
+
+	export CC
+	export CXX
+	export CPPFLAGS
+	export LDFLAGS
+	export CFLAGS
+	export CXXFLAGS
+
+	#make clean
+	#./configure --enable-demosaic-pack-gpl2 --enable-demosaic-pack-gpl3 --enable-openmp 
+	#make
+fi
 
 rm -r _build
 mkdir _build
