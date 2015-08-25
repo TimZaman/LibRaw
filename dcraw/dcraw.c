@@ -7481,7 +7481,9 @@ void CLASS setSonyBodyFeatures (unsigned id) {
           (id != 308) &&  // DSC-RX100M2
           (id != 309) &&  // DSC-RX10
           (id != 317) &&  // DSC-RX100M3
-          (id != 341))    // DSC-RX100M4
+          (id != 341) &&  // DSC-RX100M4
+          (id != 342)     // DSC-RX10M2
+         )
       imgdata.lens.makernotes.CameraFormat = LIBRAW_FORMAT_APSC;
     }
 
@@ -7535,7 +7537,7 @@ void CLASS setSonyBodyFeatures (unsigned id) {
            (id == 274) ||
            (id == 275) ||
            (id == 282) ||
-           (id == 283)	||
+           (id == 283) ||
            // SLT:
            (id == 280) ||
            (id == 281) ||
@@ -7545,7 +7547,7 @@ void CLASS setSonyBodyFeatures (unsigned id) {
            (id == 291) ||
            (id == 292) ||
            (id == 294) ||
-           (id == 303)	||
+           (id == 303) ||
            // ILCA:
            (id == 319)
            )
@@ -7561,7 +7563,8 @@ void CLASS setSonyBodyFeatures (unsigned id) {
            (id == 309) ||  // DSC-RX10
            (id == 310) ||  // DSC-RX1R
            (id == 317) ||  // DSC-RX100M3
-           (id == 341)     // DSC-RX100M4
+           (id == 341) ||  // DSC-RX100M4
+           (id == 342)     // DSC-RX10M2
            )
     {
       imgdata.lens.makernotes.CameraMount = LIBRAW_MOUNT_FixedLens;
@@ -7604,22 +7607,26 @@ void CLASS parseSonyLensFeatures (uchar a, uchar b) {
   if ((imgdata.lens.makernotes.LensMount == LIBRAW_MOUNT_Canon_EF) || !features)
     return;
 
-  imgdata.lens.makernotes.LensFormat = LIBRAW_FORMAT_FF;
-  imgdata.lens.makernotes.LensMount = LIBRAW_MOUNT_Minolta_A;
   imgdata.lens.makernotes.LensFeatures_pre[0] = 0;
   imgdata.lens.makernotes.LensFeatures_suf[0] = 0;
+  if ((features & 0x0200) && (features & 0x0100)) strcpy(imgdata.lens.makernotes.LensFeatures_pre, "E");
+  else if (features & 0x0200) strcpy(imgdata.lens.makernotes.LensFeatures_pre, "FE");
+  else if (features & 0x0100) strcpy(imgdata.lens.makernotes.LensFeatures_pre, "DT");
 
-  if ((features & 0x0200) && (features & 0x0100)) {
-    strcpy(imgdata.lens.makernotes.LensFeatures_pre, "E");
-    imgdata.lens.makernotes.LensFormat = LIBRAW_FORMAT_APSC;
-    imgdata.lens.makernotes.LensMount = LIBRAW_MOUNT_Sony_E;
-  } else if (features & 0x0200) {
-    strcpy(imgdata.lens.makernotes.LensFeatures_pre, "FE");
-    imgdata.lens.makernotes.LensMount = LIBRAW_MOUNT_Sony_E;
-  } else if (features & 0x0100) {
-    strcpy(imgdata.lens.makernotes.LensFeatures_pre, "DT");
-    imgdata.lens.makernotes.LensFormat = LIBRAW_FORMAT_APSC;
-  }
+  if (!imgdata.lens.makernotes.LensFormat && !imgdata.lens.makernotes.LensMount)
+    {
+  	  imgdata.lens.makernotes.LensFormat = LIBRAW_FORMAT_FF;
+  	  imgdata.lens.makernotes.LensMount = LIBRAW_MOUNT_Minolta_A;
+
+  	  if ((features & 0x0200) && (features & 0x0100)) {
+  		imgdata.lens.makernotes.LensFormat = LIBRAW_FORMAT_APSC;
+  		imgdata.lens.makernotes.LensMount = LIBRAW_MOUNT_Sony_E;
+  	  } else if (features & 0x0200) {
+  		imgdata.lens.makernotes.LensMount = LIBRAW_MOUNT_Sony_E;
+  	  } else if (features & 0x0100) {
+  		imgdata.lens.makernotes.LensFormat = LIBRAW_FORMAT_APSC;
+  	  }
+    }
 
   if (features & 0x4000)
     strncat(imgdata.lens.makernotes.LensFeatures_pre, " PZ", sizeof(imgdata.lens.makernotes.LensFeatures_pre));
@@ -8257,6 +8264,7 @@ void CLASS parse_makernote_0xc634(int base, int uptag, unsigned dng_writer)
              (!strncasecmp(make, "Hasselblad", 10) &&
               (!strncasecmp(model, "Stellar", 7) ||
                !strncasecmp(model, "Lunar", 5) ||
+               !strncasecmp(model, "Lusso", 5) ||
                !strncasecmp(model, "HV",2))))
       {
         ushort lid;
@@ -8837,10 +8845,15 @@ void CLASS parse_makernote (int base, int uptag)
           imgdata.lens.makernotes.CurAp = powf64(2.0f, getreal(type)/2);
           break;
         case 0x20100201:
-          imgdata.lens.makernotes.LensID =
-            (unsigned long long)fgetc(ifp)<<16 |
-            (unsigned long long)(fgetc(ifp), fgetc(ifp))<<8 |
-            (unsigned long long)fgetc(ifp);
+          {
+            unsigned long long oly_lensid [3];
+            oly_lensid[0] = fgetc(ifp);
+            fgetc(ifp);
+            oly_lensid[1] = fgetc(ifp);
+            oly_lensid[2] = fgetc(ifp);
+            imgdata.lens.makernotes.LensID =
+              (oly_lensid[0] << 16) | (oly_lensid[1] << 8) | oly_lensid[2];
+          }
           imgdata.lens.makernotes.LensMount = LIBRAW_MOUNT_FT;
           imgdata.lens.makernotes.LensFormat = LIBRAW_FORMAT_FT;
           if (((imgdata.lens.makernotes.LensID < 0x20000) ||
@@ -9037,6 +9050,7 @@ void CLASS parse_makernote (int base, int uptag)
              (!strncasecmp(make, "Hasselblad", 10) &&
               (!strncasecmp(model, "Stellar", 7) ||
                !strncasecmp(model, "Lunar", 5) ||
+               !strncasecmp(model, "Lusso", 5) ||
                !strncasecmp(model, "HV",2))))
       {
         ushort lid;
@@ -11989,7 +12003,7 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
     { "Canon PowerShot G2", 0, 0,
       { 9087,-2693,-1049,-6715,14382,2537,-2291,2819,7790 } },
     { "Canon PowerShot G3 X", 0, 0,
-      { 9602,-3823,-937,-2984,11495,1675,-407,1415,5049 } },
+      { 9701,-3857,-921,-3149,11537,1817,-786,1817,5147 } },
     { "Canon PowerShot G3", 0, 0,
       { 9212,-2781,-1073,-6573,14189,2605,-2300,2844,7664 } },
     { "Canon PowerShot G5", 0, 0,
@@ -12368,6 +12382,8 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
       { 8139,-2171,-663,-8747,16541,2295,-1925,2008,8093 } },
     { "Nikon D70", 0, 0,
       { 7732,-2422,-789,-8238,15884,2498,-859,783,7330 } },
+    { "Nikon D810A", 0, 0,
+      { 11973, -5685, -888, -1965, 10326, 1901, -115, 1123, 7169 }},
     { "Nikon D810", 0, 0,
       { 9369,-3195,-791,-4488,12430,2301,-893,1796,6872 } },
     { "Nikon D800", 0, 0,
@@ -12439,7 +12455,7 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
     { "Nikon 1 ", 0, 0,		/* J1, J2, S1, V1 */
       { 8994,-2667,-865,-4594,12324,2552,-699,1786,6260 } },
     { "Olympus AIR-A01", 0, 0xfe1,
-      { 8380,-2630,-639,-2887,10725,2496,-627,1427,5438 } },
+      { 8992,-3093,-639,-2563,10721,2122,-437,1270,5473 } },
     { "Olympus C5050", 0, 0,
       { 10508,-3124,-1273,-6079,14294,1901,-1653,2306,6237 } },
     { "Olympus C5060", 0, 0,
@@ -12573,7 +12589,7 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
     { "Pentax K-r", 0, 0,
       { 9895,-3077,-850,-5304,13035,2521,-883,1768,6936 } },
     { "Pentax K-3 II", 0, 0,
-      { 8520,-2575,-1141,-3995,12301,1881,-1045,1832,6964 }},
+      {7415,-2052,-721,-5186,12788,2682,-1446,2157,6773 } },
     { "Pentax K-3", 0, 0,
       { 7415,-2052,-721,-5186,12788,2682,-1446,2157,6773 } },
     { "Pentax K-5 II", 0, 0,
@@ -12602,6 +12618,10 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
       { 9932,-3060,-935,-5809,13331,2753,-1267,2155,5575 } },
     { "Panasonic DMC-FZ28", -15, 0xf96,
       { 10109,-3488,-993,-5412,12812,2916,-1305,2140,5543 } },
+    { "Panasonic DMC-FZ300", -15, 0xfff,
+      { 8378,-2798,-769,-3068,11410,1877,-538,1792,4623 } },
+    { "Panasonic DMC-FZ330", -15, 0xfff,  // same as FZ300
+      { 8378,-2798,-769,-3068,11410,1877,-538,1792,4623 } },
     { "Panasonic DMC-FZ30", 0, 0xf94,
       { 10976,-4029,-1141,-7918,15491,2600,-1670,2071,8246 } },
     { "Panasonic DMC-FZ3", -15, 0,
@@ -12714,6 +12734,8 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
       { 6763,-1919,-863,-3868,11515,2684,-1216,2387,5879 } },
     { "Panasonic DMC-GX7", -15,0,
       { 7610,-2780,-576,-4614,12195,2733,-1375,2393,6490 } },
+    { "Panasonic DMC-GX8", -15,0,
+      { 7564,-2263,-606,-3148,11239,2177,-540,1435,4853 } },
     { "Panasonic DMC-TZ6", -15, 0,
 	{ 8607,-2822,-808,-3755,11930,2049,-820,2060,5224 } },
     { "Panasonic DMC-ZS4", -15, 0,
@@ -12823,9 +12845,9 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
     { "Sony DSC-RX100", -800, 0,
       { 8651,-2754,-1057,-3464,12207,1373,-568,1398,4434 } },
     { "Sony DSC-RX10",0, 0,
-	    { 8562,-3595,-385,-2715,11089,1128,-1023,2081,4400 } },
+	  { 6679,-1825,-745,-5047,13256,1953,-1580,2422,5183 } },
     { "Sony DSC-RX1R", -512, 0,
-	    { 8195,-2800,-422,-4261,12273,1709,-1505,2400,5624 } },
+      { 8195,-2800,-422,-4261,12273,1709,-1505,2400,5624 } },
     { "Sony DSC-RX1", -512, 0,
       { 6344,-1612,-462,-4863,12477,2681,-865,1786,6899 } },
     { "Sony DSLR-A100", 0, 0xfeb,
@@ -12864,6 +12886,8 @@ void CLASS adobe_coeff (const char *t_make, const char *t_model
       { 5271,-712,-347,-6153,13653,2763,-1601,2366,7242 } },
     { "Sony ILCE-7S", -512, 0,
       { 5838,-1430,-246,-3497,11477,2297,-748,1885,5778 } },
+    { "Sony ILCE-7RM2", -512, 0,
+      { 6629,-1900,-483,-4618,12349,2550,-622,1381,6514 } },
     { "Sony ILCE-7R", -512, 0,
       { 4913,-541,-202,-6130,13513,2906,-1564,2151,7183 } },
     { "Sony ILCE-7", -512, 0,
@@ -13142,41 +13166,66 @@ void CLASS identify()
     { 0x393, "EOS 750D" },
     { 0x401, "EOS 5DS R" },
   }, sonique[] = {
-    { 0x002, "DSC-R1" },     { 0x100, "DSLR-A100" },
-    { 0x101, "DSLR-A900" },  { 0x102, "DSLR-A700" },
-    { 0x103, "DSLR-A200" },  { 0x104, "DSLR-A350" },
+    { 0x002, "DSC-R1" },
+    { 0x100, "DSLR-A100" },
+    { 0x101, "DSLR-A900" },
+    { 0x102, "DSLR-A700" },
+    { 0x103, "DSLR-A200" },
+    { 0x104, "DSLR-A350" },
     { 0x105, "DSLR-A300" },
-    {262,"DSLR-A900"},
-    {263,"DSLR-A380"},
+    { 0x106, "DSLR-A900" },
+    { 0x107, "DSLR-A380" },
     { 0x108, "DSLR-A330" },
-    { 0x109, "DSLR-A230" },  { 0x10a, "DSLR-A290" },
+    { 0x109, "DSLR-A230" },
+    { 0x10a, "DSLR-A290" },
     { 0x10d, "DSLR-A850" },
-    {270,"DSLR-A850"},
+    { 0x10e, "DSLR-A850" },
     { 0x111, "DSLR-A550" },
-    { 0x112, "DSLR-A500" },  { 0x113, "DSLR-A450" },
-    { 0x116, "NEX-5" },      { 0x117, "NEX-3" },
-    { 0x118, "SLT-A33" },    { 0x119, "SLT-A55V" },
-    { 0x11a, "DSLR-A560" },  { 0x11b, "DSLR-A580" },
-    { 0x11c, "NEX-C3" },     { 0x11d, "SLT-A35" },
-    { 0x11e, "SLT-A65V" },   { 0x11f, "SLT-A77V" },
-    { 0x120, "NEX-5N" },     { 0x121, "NEX-7" },
-    {290,"NEX-VG20E"},
-    { 0x123, "SLT-A37" },    { 0x124, "SLT-A57" },
-    { 0x125, "NEX-F3" },     { 0x126, "SLT-A99V" },
-    { 0x127, "NEX-6" },      { 0x128, "NEX-5R" },
-    { 0x129, "DSC-RX100" },  { 0x12a, "DSC-RX1" },
-    {299,"NEX-VG900"},
-    {300,"NEX-VG30E"},
-    { 0x12e, "ILCE-3000" },  { 0x12f, "SLT-A58" },
-    { 0x131, "NEX-3N" },     { 0x132, "ILCE-7" },
-    { 0x133, "NEX-5T" },     { 0x134, "DSC-RX100M2" },
-    { 0x135, "DSC-RX10" },   { 0x136, "DSC-RX1R" },
-    { 0x137, "ILCE-7R" },    { 0x138, "ILCE-6000" },
-    { 0x139, "ILCE-5000" },  { 0x13d, "DSC-RX100M3" },
-    { 0x13e, "ILCE-7S" },    { 0x13f, "ILCA-77M2" },
-    { 0x153, "ILCE-5100" },  { 0x154, "ILCE-7M2" },
-    { 0x15a, "ILCE-QX1" },	 { 0x155, "DSC-RX100M4"},
-    { 0x15b, "ILCE-7RM2"},
+    { 0x112, "DSLR-A500" },
+    { 0x113, "DSLR-A450" },
+    { 0x116, "NEX-5" },
+    { 0x117, "NEX-3" },
+    { 0x118, "SLT-A33" },
+    { 0x119, "SLT-A55V" },
+    { 0x11a, "DSLR-A560" },
+    { 0x11b, "DSLR-A580" },
+    { 0x11c, "NEX-C3" },
+    { 0x11d, "SLT-A35" },
+    { 0x11e, "SLT-A65V" },
+    { 0x11f, "SLT-A77V" },
+    { 0x120, "NEX-5N" },
+    { 0x121, "NEX-7" },
+    { 0x122, "NEX-VG20E"},
+    { 0x123, "SLT-A37" },
+    { 0x124, "SLT-A57" },
+    { 0x125, "NEX-F3" },
+    { 0x126, "SLT-A99V" },
+    { 0x127, "NEX-6" },
+    { 0x128, "NEX-5R" },
+    { 0x129, "DSC-RX100" },
+    { 0x12a, "DSC-RX1" },
+    { 0x12b, "NEX-VG900" },
+    { 0x12c, "NEX-VG30E" },
+    { 0x12e, "ILCE-3000" },
+    { 0x12f, "SLT-A58" },
+    { 0x131, "NEX-3N" },
+    { 0x132, "ILCE-7" },
+    { 0x133, "NEX-5T" },
+    { 0x134, "DSC-RX100M2" },
+    { 0x135, "DSC-RX10" },
+    { 0x136, "DSC-RX1R" },
+    { 0x137, "ILCE-7R" },
+    { 0x138, "ILCE-6000" },
+    { 0x139, "ILCE-5000" },
+    { 0x13d, "DSC-RX100M3" },
+    { 0x13e, "ILCE-7S" },
+    { 0x13f, "ILCA-77M2" },
+    { 0x153, "ILCE-5100" },
+    { 0x154, "ILCE-7M2" },
+    { 0x155, "DSC-RX100M4" },
+    { 0x156, "DSC-RX10M2" },
+    { 0x15a, "ILCE-QX1" },
+    { 0x15b, "ILCE-7RM2" },
   };
 
   static const struct {
